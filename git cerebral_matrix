@@ -1,0 +1,297 @@
+# cerebral_matrix/lobes.py
+# Defines the Lobe classes (Frontal, Parietal, Temporal, Occipital).
+
+import numpy as np  # Added
+from PIL import Image  # Added
+import matplotlib.pyplot as plt #Added
+from io import BytesIO
+
+class Lobe:
+    """
+    Abstract base class for brain lobe simulations.
+    """
+    def __init__(self, name, description):
+        """
+        Initializes a Lobe object.
+
+        Args:
+            name (str): The name of the lobe.
+            description (str): A brief description of the lobe's function.
+        """
+        self.name = name
+        self.description = description
+
+    def process(self, data):
+        """
+        Abstract method that processes the input data.
+        Subclasses must implement this.
+
+        Args:
+            data: The input data to be processed.
+
+        Raises:
+            NotImplementedError: If the method is not implemented in a subclass.
+        """
+        raise NotImplementedError("Subclasses must implement the process method")
+
+    def get_name(self):
+        """
+        Returns the name of the lobe.
+
+        Returns:
+            str: The name of the lobe.
+        """
+        return self.name
+
+    def get_description(self):
+        """
+        Returns the description of the lobe.
+
+        Returns:
+            str: The description of the lobe.
+        """
+        return self.description
+
+
+class FrontalLobe(Lobe):
+    """
+    Simulates the Frontal Lobe, responsible for planning and decision-making.
+    """
+    def __init__(self):
+        """
+        Initializes a FrontalLobe object.
+        """
+        super().__init__("Frontal Lobe (Planning)", "Handles planning and decision-making.")
+
+    def process(self, problem):
+        """
+        Processes a given problem by planning a solution.
+
+        Args:
+            problem (str): The problem to be solved.
+
+        Returns:
+            str: A planned solution for the problem.
+        """
+        print(f"{self.get_name()}: Analyzing problem: {problem}")
+        return f"Frontal Lobe: Solution planned for '{problem}'."
+
+
+class ParietalLobe(Lobe):
+    """
+    Simulates the Parietal Lobe, responsible for spatial analysis.
+    """
+    def __init__(self):
+        """
+        Initializes a ParietalLobe object.
+        """
+        super().__init__("Parietal Lobe (Spatial Analysis)", "Processes spatial data and sensor information.")
+
+    def process(self, spatial_data):
+        """
+        Processes spatial data to calculate an average value.
+
+        Args:
+            spatial_data (list[float]): A list of numerical spatial data.
+
+        Returns:
+            float: The average value of the spatial data, or 0.0 if no data is provided.
+        """
+        if not spatial_data:
+            print(f"{self.get_name()}: No spatial data received.")
+            return 0.0
+
+        average = sum(spatial_data) / len(spatial_data)
+        print(f"{self.get_name()}: Analyzed spatial data: {spatial_data}")
+        return average
+
+
+class TemporalLobe(Lobe):
+    """
+    Simulates the Temporal Lobe, responsible for memory access.
+    """
+    def __init__(self):
+        """
+        Initializes a TemporalLobe object.
+        """
+        super().__init__("Temporal Lobe (Memory Access)", "Retrieves relevant memories and information.")
+
+    def process(self, query):
+        """
+        Processes a memory query by retrieving relevant information.
+
+        Args:
+            query (str): The memory query.
+
+        Returns:
+            str: Retrieved memory information.
+        """
+        print(f"{self.get_name()}: Retrieving memory for query: {query}")
+        return f"Temporal Lobe: Retrieved memory: {query} -> Relevant data."
+
+
+
+class OccipitalLobe(Lobe):
+    """
+    Simulates the Occipital Lobe, responsible for image processing and visualization.
+    """
+    def __init__(self):
+        """
+        Initializes an OccipitalLobe object.
+        """
+        super().__init__("Occipital Lobe (Image Processing & Visualization)", "Processes and visualizes image data.")
+
+    def process(self, image_data):
+        """
+        Processes image data by displaying it using Matplotlib.
+
+        Args:
+            image_data (bytes): The image data as a byte string.
+        """
+        print(f"{self.get_name()}: Processing image data of size: {len(image_data) if image_data else 0}")  #Handle None case
+        if not image_data:
+            print(f"{self.get_name()}: No image data to display.")
+            return "No image data"
+
+        try:
+            # Convert the bytes to a PIL Image
+            image = Image.open(BytesIO(image_data))
+
+            # Display the image using Matplotlib (using a non-interactive backend for safety in threads)
+            plt.imshow(image)
+            plt.title("Luminous Wave Visualization")
+            plt.axis('off')  # Hide axes
+
+            # Save the plot to a BytesIO object
+            buf = BytesIO()
+            plt.savefig(buf, format='png')
+            buf.seek(0)
+            image_bytes = buf.read()
+            buf.close()
+            plt.close()
+
+            print("Occipital Lobe: Displayed luminous wave.")
+            return "Occipital Lobe: Luminous wave visualized."
+        except Exception as e:
+            print(f"Error displaying image: {e}")
+            return f"Error: {e}"
+
+
+#Helper function for creating the image
+def generate_luminous_wave_image(width=256, height=256):
+    """
+    Generates an image representing a luminous wave using NumPy and PIL.
+
+    Args:
+        width (int): The width of the image.
+        height (int): The height of the image.
+
+    Returns:
+        bytes: The image data in PNG format as bytes.
+    """
+    try:
+        # Create a gradient using NumPy
+        x, y = np.meshgrid(np.linspace(-5, 5, width), np.linspace(-5, 5, height))
+        z = np.sin(x**2 + y**2) / (x**2 + y**2)
+
+        # Normalize the data to the range 0-255
+        normalized_z = ((z - np.min(z)) / (np.max(z) - np.min(z)) * 255).astype(np.uint8)
+
+        # Create a PIL image from the NumPy array
+        image = Image.fromarray(normalized_z)
+        image = image.convert("L") # Convert to grayscale
+
+        # Save the image to a BytesIO object in PNG format
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        image_bytes = buffered.getvalue()
+        buffered.close() #Important to close
+
+        return image_bytes
+    except Exception as e:
+        print(f"Error generating luminous wave image: {e}")
+        return None  # Or raise the exception if you prefer
+# cerebral_matrix/matrix.py
+# Defines the CerebralMatrix class that orchestrates the processing by the lobes.
+
+import concurrent.futures
+from .lobes import FrontalLobe, ParietalLobe, TemporalLobe, OccipitalLobe #Relative imports
+
+class CerebralMatrix:
+    """
+    Simulates a cerebral matrix that processes data using multiple lobes concurrently.
+    """
+    def __init__(self, max_workers=4):
+        """
+        Initializes a CerebralMatrix object.
+
+        Args:
+            max_workers (int): The maximum number of worker threads to use for concurrent processing.
+        """
+        self.lobes = {
+            "frontal": FrontalLobe(),
+            "parietal": ParietalLobe(),
+            "temporal": TemporalLobe(),
+            "occipital": OccipitalLobe(),
+        }
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+
+    def solve_problem(self, problem, spatial_data, image_data):
+        """
+        Processes a problem using the various lobes of the cerebral matrix concurrently.
+
+        Args:
+            problem (str): The problem to be solved.
+            spatial_data (list[float]): Spatial data for the Parietal Lobe.
+            image_data (bytes): Image data for the Occipital Lobe.
+
+        Returns:
+            dict: A dictionary containing the results from each lobe.
+        """
+        futures = {
+            "frontal": self.executor.submit(self.lobes["frontal"].process, problem),
+            "parietal": self.executor.submit(self.lobes["parietal"].process, spatial_data),
+            "temporal": self.executor.submit(self.lobes["temporal"].process, f"Memory related to: {problem}"),
+            "occipital": self.executor.submit(self.lobes["occipital"].process, image_data),
+        }
+
+        results = {}
+        for lobe_name, future in futures.items():
+            try:
+                results[lobe_name] = future.result()  # Waits for result
+            except Exception as e:
+                results[lobe_name] = f"Error: {e}"
+                print(f"Error in {lobe_name} processing: {e}")  #Print for debugging
+
+        return results
+# cerebral_matrix/main.py
+# Entry point for running the Cerebral Matrix simulation.
+
+from .matrix import CerebralMatrix  #Relative imports
+from .lobes import generate_luminous_wave_image
+
+def main():
+    """
+    Main function to demonstrate the Cerebral Matrix simulation.
+    """
+    matrix = CerebralMatrix()  #Creates the matrix, defaulting to max_workers=4
+
+    problem = "Analyzing visual patterns"
+    spatial_data = [10.0, 15.0, 20.0, 25.0]
+
+    # Generate the luminous wave image
+    image_data = generate_luminous_wave_image()
+
+    if image_data is None:  #Handle the case where the image generation failed
+        print("Failed to generate luminous wave image. Exiting.")
+        return
+
+
+    results = matrix.solve_problem(problem, spatial_data, image_data)
+
+    print("Cerebral Matrix Results:")
+    for lobe, result in results.items():
+        print(f"{lobe}: {result}")
+
+if __name__ == "__main__":
+    main()
